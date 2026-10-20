@@ -1,0 +1,589 @@
+{
+  "name": "P03 - Yo-Chi Guest Feedback Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Yo-Chi Singapore | Guest Feedback & Community Engagement",
+        "formDescription": "PORTFOLIO DEMONSTRATION ONLY: This is an independent sample project created for a job application. It is not an official Yo-Chi Singapore form. Please use fictional guest information only. No real guest enquiries will be processed.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Guest Name",
+              "placeholder": "Enter your full name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Guest Email",
+              "fieldType": "email",
+              "placeholder": "example@example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Visit Date",
+              "fieldType": "date",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Guest Rating",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1 - Very Dissatisfied"
+                  },
+                  {
+                    "option": "2 - Dissatisfied"
+                  },
+                  {
+                    "option": "3 - Neutral"
+                  },
+                  {
+                    "option": "4 - Satisfied"
+                  },
+                  {
+                    "option": "5 - Very Satisfied"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Feedback Message",
+              "fieldType": "textarea",
+              "placeholder": "Tell us about your experience, suggestion, or concern...",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Enquiry Type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "General Feedback"
+                  },
+                  {
+                    "option": "Complaint"
+                  },
+                  {
+                    "option": "Suggestion"
+                  },
+                  {
+                    "option": "Community Partnership"
+                  },
+                  {
+                    "option": "Event or Collaboration Enquiry"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e212b1bf-9698-4e2d-b57e-f60cbc298731",
+      "name": "Yo-Chi Singapore | Guest Feedback & Community Engagement",
+      "webhookId": "0b83fbd3-912e-482c-a4d2-d9fec278c866"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst items = $input.all();\n\nreturn items.map((item, index) => {\n  const data = item.json;\n\n  const ratingText = String(data[\"Guest Rating\"] || \"\");\n  const ratingScore = Number.parseInt(ratingText, 10);\n  const enquiryType = String(data[\"Enquiry Type\"] || \"\").trim();\n  const feedback = String(data[\"Feedback Message\"] || \"\");\n  const message = feedback.toLowerCase();\n\n  let category = \"General Feedback\";\n  let priority = \"Low\";\n  let issueType = \"General Experience\";\n  let assignedTeam = \"Guest Services\";\n\n  const foodSafetyTerms = [\n    \"food poisoning\", \"allergic reaction\",\n    \"contamination\", \"mold\", \"mould\",\n    \"foreign object\", \"got sick\"\n  ];\n\n  const queueTerms = [\n    \"queue\", \"long wait\", \"waiting\",\n    \"slow service\", \"waited\", \"overwhelmed\"\n  ];\n\n  const cleanlinessTerms = [\n    \"dirty\", \"messy\", \"unclean\",\n    \"hygiene\", \"filthy\"\n  ];\n\n  const hasFoodSafetyConcern = foodSafetyTerms.some(\n    term => message.includes(term)\n  );\n\n  const hasQueueConcern = queueTerms.some(\n    term => message.includes(term)\n  );\n\n  const hasCleanlinessConcern = cleanlinessTerms.some(\n    term => message.includes(term)\n  );\n\n  if (hasFoodSafetyConcern) {\n    category = \"Complaint\";\n    priority = \"High\";\n    issueType = \"Potential Food Safety\";\n    assignedTeam = \"Guest Services / Management\";\n  } else if (\n    enquiryType === \"Complaint\" ||\n    (ratingScore <= 2 && ratingScore >= 1)\n  ) {\n    category = \"Complaint\";\n    priority = \"Medium\";\n\n    if (hasQueueConcern) {\n      issueType = \"Service / Queue\";\n    } else if (hasCleanlinessConcern) {\n      issueType = \"Cleanliness\";\n    } else {\n      issueType = \"Guest Experience\";\n    }\n  } else if (enquiryType === \"Community Partnership\") {\n    category = \"Community Engagement\";\n    priority = \"Medium\";\n    issueType = \"Community Partnership\";\n    assignedTeam = \"Marketing / Community\";\n  } else if (\n    enquiryType === \"Event or Collaboration Enquiry\"\n  ) {\n    category = \"Community Engagement\";\n    priority = \"Medium\";\n    issueType = \"Event / Collaboration\";\n    assignedTeam = \"Marketing / Community\";\n  } else if (enquiryType === \"Suggestion\") {\n    category = \"Suggestion\";\n    issueType = \"Guest Suggestion\";\n    assignedTeam = \"Marketing / Guest Services\";\n  } else if (ratingScore >= 4) {\n    category = \"Compliment\";\n    issueType = \"Positive Experience\";\n  } else if (ratingScore === 3) {\n    category = \"General Feedback\";\n    issueType = \"Neutral Experience\";\n  }\n\n\n  \n\nconst submissionId =\n  \"YCHI-\" +\n  String(data.submittedAt || \"\")\n    .replace(/[^0-9]/g, \"\") +\n  \"-\" +\n  String(index);\n\n  return {\n    json: {\n      ...data,\n      submissionId,\n      ratingScore,\n      category,\n      priority,\n      issueType,\n      assignedTeam,\n      status: \"Pending Review\"\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "c77cc91c-7449-40a9-a33c-c3af97a493c1",
+      "name": "Classify Guest Feedback"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Feedback_Log",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Submission ID": "={{ $('Classify Guest Feedback').first().json.submissionId }}",
+            "Submitted At": "={{ $('Classify Guest Feedback').first().json.submittedAt }}",
+            "Guest Name": "={{ $('Classify Guest Feedback').first().json['Guest Name'] }}",
+            "Guest Email": "={{ $('Classify Guest Feedback').first().json['Guest Email'] }}",
+            "Visit Date": "={{ $('Classify Guest Feedback').first().json['Visit Date'] }}",
+            "Guest Rating": "={{ $('Classify Guest Feedback').first().json['Guest Rating'] }}",
+            "Rating Score": "={{ $('Classify Guest Feedback').first().json.ratingScore }}",
+            "Feedback Message": "={{ $('Classify Guest Feedback').first().json['Feedback Message'] }}",
+            "Enquiry Type": "={{ $('Classify Guest Feedback').first().json['Enquiry Type'] }}",
+            "Category": "={{ $('Classify Guest Feedback').first().json.category }}",
+            "Priority": "={{ $('Classify Guest Feedback').first().json.priority }}",
+            "Issue Type": "={{ $('Classify Guest Feedback').first().json.issueType }}",
+            "Assigned Team": "={{ $('Classify Guest Feedback').first().json.assignedTeam }}",
+            "Status": "={{ $('Classify Guest Feedback').first().json.status }}",
+            "Form Mode": "={{ $('Classify Guest Feedback').first().json.formMode }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Submission ID",
+              "displayName": "Submission ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Submitted At",
+              "displayName": "Submitted At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Guest Name",
+              "displayName": "Guest Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Guest Email",
+              "displayName": "Guest Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Visit Date",
+              "displayName": "Visit Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Guest Rating",
+              "displayName": "Guest Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rating Score",
+              "displayName": "Rating Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Feedback Message",
+              "displayName": "Feedback Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Enquiry Type",
+              "displayName": "Enquiry Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Issue Type",
+              "displayName": "Issue Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assigned Team",
+              "displayName": "Assigned Team",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Form Mode",
+              "displayName": "Form Mode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        864,
+        160
+      ],
+      "id": "cf34fa5c-71e6-481e-902f-bc7a7f657093",
+      "name": "Append row in sheet"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "REPLACE_WITH_YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Feedback_Log",
+          "mode": "name"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Submission ID",
+              "lookupValue": "={{ $json.submissionId}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        0
+      ],
+      "id": "7fe6ff21-e0fe-4754-a47a-f6d51bec3793",
+      "name": "Check Existing Submission",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "964d7b4f-c00a-4a71-a1a4-61f3a28620c9",
+              "leftValue": "={{ $json[\"Submission ID\"] ?? \"\" }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "66cd8b2c-671d-462c-b22a-7bce87d4f5d3",
+      "name": "Submission Already Exists?"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json[\"Category\"] }}",
+                    "rightValue": "Complaint",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "82919259-4bbe-4828-a54a-26fa3f483ed0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Guest Services"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "79dc7e23-a57a-44fe-9843-75fa7b671a07",
+                    "leftValue": "={{ $json[\"Category\"] }}",
+                    "rightValue": "Community Engagement",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Marketing / Community"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "3e99ed1a-2510-455c-b849-c50bdcf0cb8d",
+                    "leftValue": "={{ $json[\"Category\"] }}",
+                    "rightValue": "Suggestion",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Marketing Suggestions"
+            }
+          ]
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        144
+      ],
+      "id": "531659d0-33a0-4945-818e-740886277f44",
+      "name": "Route Team Notifications"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://example.invalid/discord/guest-services-webhook",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=\n{{ \"🚨 GUEST SERVICES ALERT — PORTFOLIO DEMO\\n\" +\n\"Priority: \" + $json[\"Priority\"] + \"\\n\" +\n\"Category: \" + $json[\"Category\"] + \"\\n\" +\n\"Issue: \" + $json[\"Issue Type\"] + \"\\n\" +\n\"Rating: \" + $json[\"Rating Score\"] + \"/5\\n\" +\n\"Assigned Team: \" + $json[\"Assigned Team\"] + \"\\n\" +\n\"Status: Pending Review\\n\\n\" +\n\"Action: Review the fictional feedback in the P03 Google Sheets tracker.\" }}\n  "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1504,
+        -128
+      ],
+      "id": "a37eb323-519a-43dd-a8ac-2de084ab7777",
+      "name": "Discord - Guest Services Alert"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://example.invalid/discord/marketing-webhook",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=\n{{ \"📣 MARKETING & COMMUNITY ALERT — PORTFOLIO DEMO\\n\" +\n\"Category: \" + $json[\"Category\"] + \"\\n\" +\n\"Priority: \" + $json[\"Priority\"] + \"\\n\" +\n\"Opportunity: \" + $json[\"Issue Type\"] + \"\\n\" +\n\"Rating: \" + $json[\"Rating Score\"] + \"/5\\n\" +\n\"Assigned Team: \" + $json[\"Assigned Team\"] + \"\\n\" +\n\"Status: Pending Review\\n\\n\" +\n\"Action: Review this fictional guest enquiry in the P03 Google Sheets tracker and coordinate the next steps.\" }}\n"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1504,
+        160
+      ],
+      "id": "d6f3cb2a-5d87-47b6-8561-14d55c4ea8d1",
+      "name": "Discord - Marketing Alert"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Yo-Chi Singapore | Guest Feedback & Community Engagement": {
+      "main": [
+        [
+          {
+            "node": "Classify Guest Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Guest Feedback": {
+      "main": [
+        [
+          {
+            "node": "Check Existing Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Existing Submission": {
+      "main": [
+        [
+          {
+            "node": "Submission Already Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submission Already Exists?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Route Team Notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Team Notifications": {
+      "main": [
+        [
+          {
+            "node": "Discord - Guest Services Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discord - Marketing Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discord - Marketing Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
